@@ -4,14 +4,14 @@
   "name": "麦麦知识看板",
   "description": "把麦麦的问答渲染为优雅的知识长图卡片。支持 /问、/ask、/查、/看板 指令与 Tool 自主调用；6 套主题切换；可选用 MaiBot 内置模型配置，或自定义 openai / openai_responses / claude / gemini 协议渠道（含主备切换）。",
   "author": {
-    "name": "User & Assistant",
-    "url": "https://github.com/MaiM-with-u/MaiBot"
+    "name": "ziyiclouds-blip",
+    "url": "https://github.com/ziyiclouds-blip/maimai-knowledge-dashboard"
   },
   "urls": {
-    "repository": "https://github.com/MaiM-with-u/MaiBot",
-    "homepage": "https://github.com/MaiM-with-u/MaiBot",
-    "documentation": "https://github.com/MaiM-with-u/MaiBot",
-    "issues": "https://github.com/MaiM-with-u/MaiBot"
+    "repository": "https://github.com/ziyiclouds-blip/maimai-knowledge-dashboard",
+    "homepage": "https://github.com/ziyiclouds-blip/maimai-knowledge-dashboard",
+    "documentation": "https://github.com/ziyiclouds-blip/maimai-knowledge-dashboard",
+    "issues": "https://github.com/ziyiclouds-blip/maimai-knowledge-dashboard/issues"
   },
   "license": "MIT",
   "host_application": {
