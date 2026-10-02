@@ -15,7 +15,7 @@ class PluginSectionConfig(PluginConfigBase):
         json_schema_extra={"label": "启用插件", "x-icon": "power"},
     )
     config_version: str = Field(
-        default="1.1.0", description="配置版本",
+        default="1.2.0", description="配置版本",
         json_schema_extra={"label": "配置版本", "hidden": True},
     )
 
@@ -27,10 +27,25 @@ class ThemeConfig(PluginConfigBase):
     __ui_icon__ = "palette"
     __ui_order__ = 1
 
-    theme: Literal["light", "dark", "warm", "sakura", "mint", "grape"] = Field(
+    theme: Literal["light", "dark", "warm", "sakura", "mint", "grape", "custom"] = Field(
         default="light",
-        description="卡片配色方案。",
+        description="卡片配色方案，选 custom 使用自定义图片背景。",
         json_schema_extra={"label": "主题色", "x-icon": "palette"},
+    )
+    custom_image: str = Field(
+        default="",
+        description="自定义背景图：填图片文件名（放到插件目录下）、绝对路径、http(s) 图片地址，或 base64。仅主题选 custom 时生效。",
+        json_schema_extra={"label": "自定义背景图", "placeholder": "bg.png / https://.../bg.jpg / data:image/...;base64,..."},
+    )
+    custom_overlay: int = Field(
+        default=78, ge=0, le=100,
+        description="背景图上的白色蒙版透明度（%），越高文字越清晰、图片越淡。",
+        json_schema_extra={"label": "蒙版透明度"},
+    )
+    custom_blur: int = Field(
+        default=3, ge=0, le=20,
+        description="背景图高斯模糊半径，0 为不模糊。",
+        json_schema_extra={"label": "背景模糊度"},
     )
     header_text: str = Field(
         default="",

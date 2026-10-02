@@ -1,6 +1,6 @@
 [plugin]
 name = "麦麦知识看板"
-config_version = "1.1.0"
+config_version = "1.2.0"
 enabled = true
 
 [general]
@@ -8,8 +8,14 @@ max_tokens = 1536
 temperature = 0.3
 
 [theme]
-# light 浅色蓝 / dark 暗夜 / warm 暖阳橙 / sakura 樱粉 / mint 薄荷绿 / grape 葡萄紫
+# light 浅色蓝 / dark 暗夜 / warm 暖阳橙 / sakura 樱粉 / mint 薄荷绿 / grape 葡萄紫 / custom 自定义图片背景
 theme = "light"
+# 自定义背景图（theme=custom 时生效）：插件目录下的文件名、绝对路径、http(s) 地址或 base64
+custom_image = ""
+# 白色蒙版透明度 0-100，越高字越清晰图越淡
+custom_overlay = 78
+# 背景高斯模糊半径，0 不模糊
+custom_blur = 3
 # 卡片头部标题左侧引导文案，留空自动显示提问内容
 header_text = ""
 # 底部水印署名，留空自动用「Bot昵称 · 麦麦知识看板」

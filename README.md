@@ -7,7 +7,7 @@
 - `/问`、`/ask`、`/查`、`/看板` 指令提问，回答渲染为知识卡片长图
 - 支持图片提问（带图或引用图片消息）
 - 提供 `render_dashboard_card` Tool，大模型遇到复杂架构/流程类问题可自主调用
-- **6 套主题**：`light` 浅色蓝、`dark` 暗夜、`warm` 暖阳橙、`sakura` 樱粉、`mint` 薄荷绿、`grape` 葡萄紫
+- **6 套主题 + 自定义图片背景**：`light` 浅色蓝、`dark` 暗夜、`warm` 暖阳橙、`sakura` 樱粉、`mint` 薄荷绿、`grape` 葡萄紫，或 `custom` 用一张图片做卡片背景（自动提亮/降饱和/模糊/蒙版保证可读性，并从图片取主色调作为强调色）
 - **双模型来源**：
   - MaiBot 内置模型配置（默认）：可直选模型名，或按任务路由依次尝试
   - 自定义渠道：`openai` / `openai_responses` / `claude` / `gemini` 四种协议，支持主备两个渠道自动切换，失败自动回退内置模型
@@ -40,10 +40,15 @@
 
 | 项 | 默认 | 说明 |
 |---|---|---|
-| theme | light | 主题色：light / dark / warm / sakura / mint / grape |
+| theme | light | 主题色：light / dark / warm / sakura / mint / grape / custom |
+| custom_image | 空 | custom 主题的背景图：插件目录下的文件名、绝对路径、http(s) 地址或 base64 |
+| custom_overlay | 78 | 背景白色蒙版透明度（%），越高字越清晰 |
+| custom_blur | 3 | 背景高斯模糊半径，0 不模糊 |
 | header_text | 空 | 卡片头部引导文案，留空自动显示提问内容 |
 | footer_text | 空 | 底部署名，留空自动为「Bot昵称 · 麦麦知识看板」 |
 | footer_right_text | 智能知识生成 · 仅供参考 | 右下角文案 |
+
+**自定义背景用法**：把图片（如 `bg.jpg`）放到插件目录，主题选 `custom`、`custom_image` 填 `bg.jpg` 即可；也可以直接填图片 URL 或 base64。渲染时会自动把图片居中裁剪铺满、提亮降饱和、按 `custom_blur` 模糊、盖上 `custom_overlay` 不透明度的白色蒙版，主题强调色自动取图片主色调。
 
 ### [external_model]（自定义渠道，优先级最高）
 

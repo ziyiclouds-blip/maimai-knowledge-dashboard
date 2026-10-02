@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": "麦麦知识看板",
-  "description": "把麦麦的问答渲染为优雅的知识长图卡片。支持 /问、/ask、/查、/看板 指令与 Tool 自主调用；6 套主题切换；可选用 MaiBot 内置模型配置，或自定义 openai / openai_responses / claude / gemini 协议渠道（含主备切换）。",
+  "description": "把麦麦的问答渲染为优雅的知识长图卡片。支持 /问、/ask、/查、/看板 指令与 Tool 自主调用；6 套内置主题 + 自定义图片背景；可选用 MaiBot 内置模型配置，或自定义 openai / openai_responses / claude / gemini 协议渠道（含主备切换）。",
   "author": {
     "name": "ziyiclouds-blip",
     "url": "https://github.com/ziyiclouds-blip/maimai-knowledge-dashboard"

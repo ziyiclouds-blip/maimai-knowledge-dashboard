@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import re
+from pathlib import Path
 from typing import Any, Optional
 
 from maibot_sdk import MaiBotPlugin, Command, Tool
@@ -79,6 +80,45 @@ class MaimaiKnowledgeDashboardPlugin(MaiBotPlugin):
             return custom
         bot_name = await self._get_bot_name()
         return f"{bot_name} · 麦麦知识看板"
+
+    async def _resolve_bg_image(self) -> Optional[bytes]:
+        """解析 theme.custom_image：文件名 / 绝对路径 / http(s) URL / base64。"""
+        raw = str(self._get_cfg_value("theme", "custom_image", "") or "").strip()
+        if not raw:
+            return None
+
+        # base64 或 data URL
+        if raw.startswith("data:") or re.fullmatch(r"[A-Za-z0-9+/=\s]{64,}", raw):
+            try:
+                b64 = raw.split(",", 1)[-1] if raw.startswith("data:") else raw
+                return base64.b64decode(b64)
+            except Exception as e:
+                self.ctx.logger.warning("自定义背景图 base64 解码失败: %s", e)
+                return None
+
+        # 远程 URL
+        if raw.startswith("http://") or raw.startswith("https://"):
+            try:
+                import aiohttp
+                async with aiohttp.ClientSession() as sess:
+                    async with sess.get(raw, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                        if resp.status == 200:
+                            return await resp.read()
+                        self.ctx.logger.warning("下载自定义背景图失败: HTTP %s", resp.status)
+            except Exception as e:
+                self.ctx.logger.warning("下载自定义背景图失败: %s", e)
+            return None
+
+        # 本地文件：插件目录相对路径或绝对路径
+        plugin_dir = Path(__file__).resolve().parent
+        for p in (plugin_dir / raw, Path(raw)):
+            try:
+                if p.is_file():
+                    return p.read_bytes()
+            except Exception:
+                continue
+        self.ctx.logger.warning("找不到自定义背景图: %s", raw)
+        return None
 
     # ---------------- 图片提取 ----------------
 
@@ -297,6 +337,13 @@ class MaimaiKnowledgeDashboardPlugin(MaiBotPlugin):
                                model_tag: str, stream_id: str) -> bytes:
         cfg = self._cfg()
         footer = await self._get_footer_text()
+        theme = str(cfg.theme.theme or "light")
+        bg_bytes = None
+        if theme == "custom":
+            bg_bytes = await self._resolve_bg_image()
+            if bg_bytes is None:
+                self.ctx.logger.warning("custom 主题未配置有效背景图，回退 light 主题")
+                theme = "light"
         png_bytes = render_natural_knowledge_card(
             question=question,
             markdown_content=markdown_content,
@@ -304,7 +351,10 @@ class MaimaiKnowledgeDashboardPlugin(MaiBotPlugin):
             footer_text=footer,
             footer_right_text=str(cfg.theme.footer_right_text or ""),
             header_text=str(cfg.theme.header_text or ""),
-            theme=str(cfg.theme.theme or "light"),
+            theme=theme,
+            bg_image_bytes=bg_bytes,
+            bg_overlay=int(getattr(cfg.theme, "custom_overlay", 78) or 78),
+            bg_blur=int(getattr(cfg.theme, "custom_blur", 3) or 0),
         )
         b64_img = base64.b64encode(png_bytes).decode("utf-8")
         if stream_id:

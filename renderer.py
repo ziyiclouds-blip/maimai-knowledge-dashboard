@@ -1,7 +1,10 @@
+from __future__ import annotations
+
+import colorsys
 import io
 import re
-from typing import Any, Dict
-from PIL import Image, ImageDraw, ImageFont
+from typing import Any, Dict, Optional
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
 # ================= 主题色板 =================
 # 每个主题提供: bg_canvas / bg_card / border_card / text_title / text_main /
@@ -83,6 +86,86 @@ DEFAULT_THEME = "light"
 def get_theme(name: str) -> dict:
     t = THEMES.get(str(name or "").strip().lower())
     return t if t is not None else THEMES[DEFAULT_THEME]
+
+
+# ================= 自定义图片背景 =================
+
+def _mix(c1, c2, ratio: float):
+    """按 ratio 把 c1 混向 c2（0=c1, 1=c2），保留 alpha。"""
+    return tuple(int(round(a + (b - a) * ratio)) for a, b in zip(c1[:3], c2[:3])) + (c1[3],)
+
+
+def _dominant_accent(img: Image.Image):
+    """从图片提取主色调，转成适合做主题强调色的深色。"""
+    small = img.convert("RGB").resize((16, 16))
+    px = list(small.getdata())
+    # 优先取饱和度最高的像素，否则取平均色
+    best = None
+    best_sat = -1.0
+    r_sum = g_sum = b_sum = 0
+    for r, g, b in px:
+        r_sum += r
+        g_sum += g
+        b_sum += b
+        _, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+        if v > 0.15 and s > best_sat:
+            best_sat = s
+            best = (r, g, b)
+    if best is None or best_sat < 0.12:
+        n = max(len(px), 1)
+        best = (r_sum // n, g_sum // n, b_sum // n)
+        _, s, v = colorsys.rgb_to_hsv(best[0] / 255, best[1] / 255, best[2] / 255)
+        if s < 0.08:
+            return _hex("4A6FA5")  # 灰图回退蓝
+    h, s, v = colorsys.rgb_to_hsv(best[0] / 255, best[1] / 255, best[2] / 255)
+    # 加深到可读强调色
+    s = min(max(s, 0.35), 0.85)
+    v = min(max(v * 0.55, 0.28), 0.62)
+    r, g, b = colorsys.hsv_to_rgb(h, s, v)
+    return (int(r * 255), int(g * 255), int(b * 255), 255)
+
+
+def _make_custom_background(
+    image_bytes: bytes,
+    width: int,
+    height: int,
+    overlay_opacity: int = 78,
+    blur: int = 3,
+) -> tuple[Image.Image, dict]:
+    """把用户图片处理成卡片画布背景 + 派生主题色。"""
+    src = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+
+    # 微调：轻微提亮、压对比与饱和，让内容区不刺眼
+    src = ImageEnhance.Brightness(src).enhance(1.08)
+    src = ImageEnhance.Contrast(src).enhance(0.88)
+    src = ImageEnhance.Color(src).enhance(0.72)
+    if blur > 0:
+        src = src.filter(ImageFilter.GaussianBlur(radius=blur))
+
+    # 居中裁剪铺满
+    sw, sh = src.size
+    scale = max(width / sw, height / sh)
+    nw, nh = int(sw * scale + 0.5), int(sh * scale + 0.5)
+    src = src.resize((nw, nh), Image.LANCZOS)
+    x0, y0 = (nw - width) // 2, (nh - height) // 2
+    src = src.crop((x0, y0, x0 + width, y0 + height))
+
+    base = src.convert("RGBA")
+    accent = _dominant_accent(src)
+
+    # 白色蒙版压住背景，保证可读性
+    veil_alpha = max(0, min(100, overlay_opacity)) * 255 // 100
+    veil = Image.new("RGBA", base.size, (255, 255, 255, veil_alpha))
+    base.alpha_composite(veil)
+
+    T = dict(THEMES[DEFAULT_THEME])
+    T["primary"] = accent
+    T["primary_bg"] = _mix(accent, _hex("FFFFFF"), 0.90)
+    T["primary_border"] = _mix(accent, _hex("FFFFFF"), 0.62)
+    T["blockquote_bar"] = accent
+    T["bg_card"] = _hex("FFFFFF")[:3] + (218,)
+    T["border_card"] = _hex("FFFFFF")[:3] + (120,)
+    return base, T
 
 
 def get_fonts(scale: int = 2):
@@ -234,6 +317,9 @@ def render_natural_knowledge_card(
     footer_right_text: str = "智能知识生成 · 仅供参考",
     header_text: str = "",
     theme: str = "light",
+    bg_image_bytes: Optional[bytes] = None,
+    bg_overlay: int = 78,
+    bg_blur: int = 3,
 ) -> bytes:
     T = get_theme(theme)
     SCALE = 2
@@ -327,8 +413,18 @@ def render_natural_knowledge_card(
 
     TOTAL_HEIGHT = PADDING_OUTER * 2 + header_h + 16 * SCALE + body_height + FOOTER_H + 20 * SCALE
 
-    img = Image.new("RGBA", (WIDTH, TOTAL_HEIGHT), T["bg_canvas"])
-    draw = ImageDraw.Draw(img)
+    # 自定义主题：图片做画布背景，派生主题色；失败回退普通主题
+    if theme == "custom" and bg_image_bytes:
+        try:
+            img, T = _make_custom_background(bg_image_bytes, WIDTH, TOTAL_HEIGHT, bg_overlay, bg_blur)
+        except Exception:
+            img = Image.new("RGBA", (WIDTH, TOTAL_HEIGHT), T["bg_canvas"])
+    else:
+        img = Image.new("RGBA", (WIDTH, TOTAL_HEIGHT), T["bg_canvas"])
+
+    # 统一画在透明层上再合成，保证半透明卡片底色能透出背景图
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
 
     card_rect = [PADDING_OUTER, PADDING_OUTER, WIDTH - PADDING_OUTER, TOTAL_HEIGHT - PADDING_OUTER]
     draw.rounded_rectangle(card_rect, radius=14 * SCALE, fill=T["bg_card"], outline=T["border_card"], width=1 * SCALE)
@@ -447,6 +543,7 @@ def render_natural_knowledge_card(
     r_w = r_bbox[2] - r_bbox[0]
     draw.text((card_right - r_w, curr_y), right_text, fill=T["text_sub"], font=fonts["footer"])
 
+    img.alpha_composite(layer)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
