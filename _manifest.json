@@ -1,0 +1,52 @@
+{
+  "manifest_version": 2,
+  "version": "1.1.0",
+  "name": "麦麦知识看板",
+  "description": "把麦麦的问答渲染为优雅的知识长图卡片。支持 /问、/ask、/查、/看板 指令与 Tool 自主调用；6 套主题切换；可选用 MaiBot 内置模型配置，或自定义 openai / openai_responses / claude / gemini 协议渠道（含主备切换）。",
+  "author": {
+    "name": "User & Assistant",
+    "url": "https://github.com/MaiM-with-u/MaiBot"
+  },
+  "urls": {
+    "repository": "https://github.com/MaiM-with-u/MaiBot",
+    "homepage": "https://github.com/MaiM-with-u/MaiBot",
+    "documentation": "https://github.com/MaiM-with-u/MaiBot",
+    "issues": "https://github.com/MaiM-with-u/MaiBot"
+  },
+  "license": "MIT",
+  "host_application": {
+    "min_version": "0.10.0",
+    "max_version": "2.99.99"
+  },
+  "sdk": {
+    "min_version": "2.0.0",
+    "max_version": "2.99.99"
+  },
+  "dependencies": [
+    {
+      "type": "python_package",
+      "name": "Pillow",
+      "version_spec": ">=9.0.0"
+    },
+    {
+      "type": "python_package",
+      "name": "aiohttp",
+      "version_spec": ">=3.8.0"
+    }
+  ],
+  "capabilities": [
+    "llm.generate",
+    "send.text",
+    "send.image",
+    "message.get_by_id",
+    "config.get",
+    "network.http"
+  ],
+  "i18n": {
+    "default_locale": "zh-CN",
+    "supported_locales": [
+      "zh-CN"
+    ]
+  },
+  "id": "maimai.knowledge-dashboard"
+}

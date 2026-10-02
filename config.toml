@@ -1,0 +1,40 @@
+[plugin]
+name = "麦麦知识看板"
+config_version = "1.1.0"
+enabled = true
+
+[general]
+enabled = true
+max_tokens = 1536
+temperature = 0.3
+
+[theme]
+# light 浅色蓝 / dark 暗夜 / warm 暖阳橙 / sakura 樱粉 / mint 薄荷绿 / grape 葡萄紫
+theme = "light"
+# 卡片头部标题左侧引导文案，留空自动显示提问内容
+header_text = ""
+# 底部水印署名，留空自动用「Bot昵称 · 麦麦知识看板」
+footer_text = ""
+footer_right_text = "智能知识生成 · 仅供参考"
+
+[external_model]
+# 启用后优先使用自定义渠道，失败自动回退 MaiBot 内置模型
+enabled = false
+# openai / openai_responses / claude / gemini
+protocol = "openai"
+base_url = ""
+api_key = ""
+model = ""
+# 备用渠道（主渠道失败时尝试），留空不用
+backup_base_url = ""
+backup_api_key = ""
+backup_model = ""
+timeout_seconds = 60
+
+[builtin_model]
+# 直接指定 MaiBot 模型配置里已有的模型名（最高优先级），留空走任务路由
+model_name = ""
+# 按顺序尝试的任务名，逗号分隔；留空默认 utils,replyer,planner
+task_names = ""
+# 带图提问时优先尝试的视觉任务名
+vision_task = "image"
