@@ -326,7 +326,7 @@ class MaimaiKnowledgeDashboardPlugin(MaiBotPlugin):
         **kwargs: Any,
     ) -> tuple[bool, str, bool]:
         """处理 /问 xxx 指令"""
-        if not self._get_cfg_value("general", "enabled", True):
+        if not self._get_cfg_value("plugin", "enabled", True):
             return False, "插件已禁用", True
 
         # 1. 提取提问内容
@@ -443,7 +443,7 @@ class MaimaiKnowledgeDashboardPlugin(MaiBotPlugin):
         **kwargs: Any,
     ) -> dict[str, str]:
         """Tool 接口：供大模型自主渲染知识卡片"""
-        if not self._get_cfg_value("general", "enabled", True):
+        if not self._get_cfg_value("plugin", "enabled", True):
             return {"name": "render_dashboard_card", "content": "看板插件当前已禁用。"}
 
         bot_name = await self._get_bot_name()

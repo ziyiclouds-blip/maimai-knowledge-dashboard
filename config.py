@@ -125,10 +125,6 @@ class GeneralConfig(PluginConfigBase):
     __ui_icon__ = "settings"
     __ui_order__ = 0
 
-    enabled: bool = Field(
-        default=True, description="是否响应 /问 /ask 指令与 Tool 调用。",
-        json_schema_extra={"label": "启用看板功能", "x-icon": "power"},
-    )
     max_tokens: int = Field(
         default=1536, description="LLM 单次回答最大 token 数。", ge=256, le=32000,
         json_schema_extra={"label": "最大 Token 数"},

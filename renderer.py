@@ -194,6 +194,17 @@ def parse_markdown_blocks(md_text: str):
         if not line_s:
             blocks.append({"type": "spacing", "height": 6})
             continue
+        if re.match(r"^[-*_]{3,}$", line_s):
+            blocks.append({"type": "divider"})
+            continue
+        if line_s.startswith("|") and line_s.count("|") >= 2:
+            cells = [c.strip() for c in line_s.strip().strip("|").split("|")]
+            if cells and all(re.match(r"^:?-+:?$", c) for c in cells):
+                continue
+            cells = [clean_inline_markdown(c) for c in cells if c]
+            if cells:
+                blocks.append({"type": "paragraph", "text": "　·　".join(cells)})
+            continue
         if line_s.startswith("## "):
             blocks.append({"type": "h2", "text": clean_inline_markdown(line_s[3:].strip())})
         elif line_s.startswith("### "):
@@ -245,6 +256,10 @@ def render_natural_knowledge_card(
             h = b["height"] * SCALE
             parsed_blocks.append({"type": "spacing", "h": h})
             body_height += h
+        elif b_type == "divider":
+            h = 18 * SCALE
+            parsed_blocks.append({"type": "divider", "h": h})
+            body_height += h
         elif b_type == "h2":
             lines = wrap_text_smart(dummy_draw, b["text"], fonts["h2"], CONTENT_W - 20 * SCALE)
             h = (len(lines) * 26 + 18) * SCALE
@@ -283,11 +298,26 @@ def render_natural_knowledge_card(
 
     # Header 测量
     q_font = fonts["title"]
-    badge_w = 150 * SCALE
-    q_avail_w = CONTENT_W - badge_w - 10 * SCALE
+    tag_text = str(model_tag or "MaiBot")
+    badge_font = fonts["badge"]
+    max_tag_w = 170 * SCALE
+    tag_draw = tag_text
+    while tag_draw and dummy_draw.textbbox((0, 0), tag_draw + "…", font=badge_font)[2] > max_tag_w:
+        tag_draw = tag_draw[:-1]
+    if tag_draw != tag_text:
+        tag_draw = tag_draw.rstrip() + "…"
+    tag_w = dummy_draw.textbbox((0, 0), tag_draw, font=badge_font)[2]
+    badge_w = tag_w + 30 * SCALE
+    q_avail_w = CONTENT_W - (26 + 10) * SCALE - badge_w - 20 * SCALE
     display_header = (header_text or "").strip() or question
     clean_q = clean_inline_markdown(display_header)
     q_lines = wrap_text_smart(dummy_draw, clean_q, q_font, q_avail_w)
+    if len(q_lines) > 3:
+        q_lines = q_lines[:3]
+        last = q_lines[-1].rstrip()
+        while last and dummy_draw.textbbox((0, 0), last + "…", font=q_font)[2] > q_avail_w:
+            last = last[:-1].rstrip()
+        q_lines[-1] = last + "…"
     if not q_lines:
         q_lines = ["提问与解答"]
     header_h = (max(len(q_lines) * 28 + 24, 52)) * SCALE
@@ -320,12 +350,13 @@ def render_natural_knowledge_card(
         draw.text((q_text_x, t_y), ql, fill=T["text_title"], font=q_font)
         t_y += 28 * SCALE
 
-    # Badge
-    badge_rect = [card_right - 146 * SCALE, curr_y + 2 * SCALE, card_right, curr_y + 26 * SCALE]
+    # Badge（宽度自适应文字，超长截断）
+    badge_x0 = card_right - badge_w
+    badge_rect = [badge_x0, curr_y + 2 * SCALE, card_right, curr_y + 26 * SCALE]
     draw.rounded_rectangle(badge_rect, radius=12 * SCALE, fill=T["badge_bg"], outline=T["badge_border"], width=1 * SCALE)
     draw.ellipse([badge_rect[0] + 8 * SCALE, curr_y + 11 * SCALE, badge_rect[0] + 14 * SCALE, curr_y + 17 * SCALE],
                  fill=T["badge_dot"])
-    draw.text((badge_rect[0] + 19 * SCALE, curr_y + 5 * SCALE), model_tag, fill=T["text_muted"], font=fonts["badge"])
+    draw.text((badge_rect[0] + 19 * SCALE, curr_y + 5 * SCALE), tag_draw, fill=T["text_muted"], font=fonts["badge"])
 
     curr_y += header_h
     draw.line([(card_left, curr_y), (card_right, curr_y)], fill=T["line"], width=1 * SCALE)
@@ -335,6 +366,9 @@ def render_natural_knowledge_card(
     for b in parsed_blocks:
         b_type = b["type"]
         if b_type == "spacing":
+            curr_y += b["h"]
+        elif b_type == "divider":
+            draw.line([(card_left, curr_y + 8 * SCALE), (card_right, curr_y + 8 * SCALE)], fill=T["line"], width=1 * SCALE)
             curr_y += b["h"]
         elif b_type == "h2":
             draw.rounded_rectangle([card_left, curr_y + 4 * SCALE, card_left + 4 * SCALE, curr_y + 20 * SCALE],
