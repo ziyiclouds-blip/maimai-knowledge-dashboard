@@ -216,7 +216,7 @@ class MaimaiKnowledgeDashboardPlugin(MaiBotPlugin):
                 content = self._extract_llm_text(res)
                 if content:
                     tag = str(res.get("model") or task_name) if isinstance(res, dict) else task_name
-                    return content, tag
+                    return content, self._resolve_model_display_name(tag)
             except Exception as e:
                 self.ctx.logger.warning("LLM 任务 %s 生成失败: %s", task_name, e)
         return "", ""
@@ -230,6 +230,27 @@ class MaimaiKnowledgeDashboardPlugin(MaiBotPlugin):
         if content.strip():
             self.ctx.logger.warning("LLM 返回异常内容: %s", content)
         return ""
+
+    def _resolve_model_display_name(self, name: str) -> str:
+        """把模型短名映射成 model_config.toml 里的 model_identifier 展示名。"""
+        if getattr(self, "_model_name_map", None) is None:
+            self._model_name_map = {}
+            for path in ("/MaiMBot/config/model_config.toml", "./config/model_config.toml",
+                         "../config/model_config.toml"):
+                try:
+                    import tomllib
+                    with open(path, "rb") as f:
+                        data = tomllib.load(f)
+                    for m in data.get("models", []):
+                        n = str(m.get("name") or "").strip()
+                        ident = str(m.get("model_identifier") or "").strip()
+                        if n and ident:
+                            self._model_name_map[n] = ident
+                    if self._model_name_map:
+                        break
+                except Exception:
+                    continue
+        return self._model_name_map.get(name, name)
 
     async def _call_llm(self, prompt: str, image_base64: str = "") -> tuple[str, str]:
         """自定义渠道优先，失败后回退内置模型。返回 (内容, 模型标签)。"""
