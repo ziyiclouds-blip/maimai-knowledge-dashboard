@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import Field
 from maibot_sdk.config import PluginConfigBase
 
 
@@ -12,7 +12,7 @@ class PluginSectionConfig(PluginConfigBase):
     config_version: str = Field(default="1.1.0", description="配置版本")
 
 
-class ThemeConfig(BaseModel):
+class ThemeConfig(PluginConfigBase):
     """看板主题"""
 
     __ui_label__ = "主题外观"
@@ -36,7 +36,7 @@ class ThemeConfig(BaseModel):
     )
 
 
-class ExternalModelConfig(BaseModel):
+class ExternalModelConfig(PluginConfigBase):
     """自定义外部模型渠道（优先于 MaiBot 内置模型配置）"""
 
     __ui_label__ = "自定义模型渠道"
@@ -56,7 +56,7 @@ class ExternalModelConfig(BaseModel):
     timeout_seconds: int = Field(default=60, description="单次请求超时秒数。")
 
 
-class BuiltinModelConfig(BaseModel):
+class BuiltinModelConfig(PluginConfigBase):
     """使用 MaiBot 内置模型配置（推荐默认）"""
 
     __ui_label__ = "内置模型路由"
@@ -76,7 +76,7 @@ class BuiltinModelConfig(BaseModel):
     )
 
 
-class GeneralConfig(BaseModel):
+class GeneralConfig(PluginConfigBase):
     __ui_label__ = "基础设置"
     __ui_order__ = 0
 
