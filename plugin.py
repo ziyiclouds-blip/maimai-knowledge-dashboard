@@ -366,7 +366,7 @@ class MaimaiKnowledgeDashboardPlugin(MaiBotPlugin):
     @Command(
         "ask",
         description="向麦麦提问，并将解答渲染为优雅的知识卡片（主题可在插件配置中切换）",
-        pattern=r"[!/](?:问|ask|查|看板)\s*(?P<query>.*?)(?:\s*@\S+\s*)?$",
+        pattern=r"[!/](?:问|ask|查|看板)[ \t]*(?P<query>[\s\S]*)$",
         aliases=["/问", "!问", "/ask", "!ask", "/查", "!查", "/看板", "!看板"],
     )
     async def handle_ask_command(
@@ -391,13 +391,14 @@ class MaimaiKnowledgeDashboardPlugin(MaiBotPlugin):
             raw_text = kwargs["message"].get("processed_plain_text") or kwargs["message"].get("plain_text") or ""
 
         if not target_query and raw_text:
-            m = re.search(r"[!/](?:问|ask|查|看板)\s*(.+?)(?:\s+@\S+\s*)?$", raw_text)
+            m = re.search(r"[!/](?:问|ask|查|看板)[ \t]*([\s\S]+)$", raw_text)
             if m:
                 target_query = m.group(1).strip()
 
-        # 1.5 统一清理 query：去掉 @提及、占位符
+        # 1.5 统一清理 query：去掉首尾 @提及、占位符（不动中间的 @param 之类代码符号）
         if target_query:
-            target_query = re.sub(r"@\S+(?:\s+|$)", "", target_query)
+            target_query = re.sub(r"^@[^\s@]+[ \t]+", "", target_query)
+            target_query = re.sub(r"[ \t]+@[^\s@]+\s*$", "", target_query)
             target_query = re.sub(r"\[(?:image|reply|emoji|at)\]", "", target_query)
             target_query = target_query.strip()
 
